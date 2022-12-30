@@ -9,5 +9,34 @@
         "Rarible",
         "SOLANA",
         "typeorm"
+    ],
+    "sqltools.connections": [
+        {
+            "name": "Moonium Development",
+            "database": "development",
+            "driver": "PostgreSQL",
+            "username": "root",
+            "password": "password",
+            "server": "51.158.42.69",
+            "port": 5432,
+        },
+        {
+            "name": "Moonium Staging",
+            "database": "staging",
+            "driver": "PostgreSQL",
+            "username": "root",
+            "password": "password",
+            "server": "51.158.42.69",
+            "port": 5432,
+        },
+        {
+            "name": "Moonium Production",
+            "database": "production",
+            "driver": "PostgreSQL",
+            "username": "root",
+            "password": "password",
+            "server": "51.158.42.69",
+            "port": 5432,
+        }
     ]
 }

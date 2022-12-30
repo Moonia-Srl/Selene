@@ -26,7 +26,7 @@ async function bootstrap() {
   // Setups the Swagger integration when not in "production" mode
   if (env.NODE_ENV != 'production') setupSwagger(app);
 
-  await app.listen(port);
+  await app.listen(port, () => console.warn(`Server started in '${env.NODE_ENV}' mode on port ${env.PORT}`));
 }
 
 bootstrap();
