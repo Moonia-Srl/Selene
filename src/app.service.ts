@@ -11,8 +11,8 @@ import { NFT } from './api/nft/nft.entity';
 export class AppService {
   constructor(
     @InjectRepository(Contract) private readonly ContractRepo: Repository<Contract>,
-    @InjectRepository(NFT) private readonly NftRepo: Repository<NFT>
-  ) {}
+    @InjectRepository(NFT) private readonly NftRepo: Repository<NFT>,
+  ) { }
 
   /**
    * Recursively retrieves collection data (the NFTs inside it) from Rarible's API
@@ -23,25 +23,27 @@ export class AppService {
    * @returns {Promise<Record<unknown>>} - The list of NFTs in the collection (Rarible format)
    */
   private async GetRaribleCollection(collection: string, session = '') {
-    // Interpolates the REST endpoint URL and the query params for the endpoint
-    const getCollectionUrl = `${process.env.RARIBLE_API}/items/byCollection`;
+    // Makes a request to the Rarible API to fetch a fraction of the NFTs in the 'collection'
     const query = { collection, limit: 1000, continuation: session };
+    const getCollectionUrl = `${process.env.RARIBLE_API}/items/byCollection`;
+    const { data: { items, continuation } } = await axios.get(getCollectionUrl, { params: query });
 
-    // Makes the request and converts it back to an AxiosResponse object (prev. Observable)
-    const { data } = await axios.get(getCollectionUrl, { params: query });
-
-    // Destructure the needed fields in the response
-    const { items, continuation } = data;
-
+    // For each NFT determine the owner wallet by querying another endpoint
     for (const nft of items) {
-      // Interpolates the REST endpoint URL and the query params for the endpoint
+      // Makes a request to the Rarible API to fetch the wallet that owns the current 'nft'
       const getOwnerUrl = `${process.env.RARIBLE_API}/ownerships/byItem`;
+      const { data: { ownerships: [ownership] } } = await axios.get(getOwnerUrl, { params: { itemId: nft.id } });
 
-      // Makes the request and converts it back to an AxiosResponse object (prev. Observable)
-      const { data } = await axios.get(getOwnerUrl, { params: { itemId: nft.id } });
+      nft.owner = ownership?.owner // Updates the local object with the owner address
 
-      // Updates the local NFT reference with the current owner
-      nft.owner = data.ownerships[0]?.owner;
+      // Sometimes the above API call may fail, in this case we retry to another source 
+      if (!ownership?.owner) {
+        // Interpolates the REST endpoint URL and the query params for the endpoint
+        const getOwnerUrl = `https://rarible.com/marketplace/api/v4/items/${nft.id.replace(':', '-')}/ownerships`
+        // Makes the request and converts it back to an AxiosResponse object (prev. Observable)
+        const { data: [ownership] } = await axios.get(getOwnerUrl);
+        nft.owner = ownership.owner?.replace('-', ':'); // Updates the local object with the owner address
+      }
     }
 
     if (continuation !== undefined) {
@@ -67,10 +69,6 @@ export class AppService {
       const collection_nfts = await this.GetRaribleCollection(contract.address);
       // Converts Rarible data format to our internal one
       const internal_nfts = collection_nfts.map(item => plainToClass(Rarible2NFT, item));
-
-      // ! Only temporary since Rarible doesn't populate item.contract for SOLANA
-      if (contract.address.includes('SOLANA:'))
-        internal_nfts.forEach(x => (x.contract.address = contract.address));
 
       // Updates the entries that have been changed on the database as well
       await this.NftRepo.save(internal_nfts, { chunk: 100 });

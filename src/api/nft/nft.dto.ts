@@ -55,7 +55,7 @@ export class Rarible2NFT {
   @Expose() @Transform(({ obj }) => obj.id) tokenId: string;
 
   @Expose() @Transform(({ obj }) => obj.meta?.name ?? 'ND') name: string;
-  @Expose() @Transform(({ obj }) => obj.supply) supply: number;
+  @Expose() @Transform(({ obj }) => parseInt(obj.supply)) supply: number;
   @Expose() @Transform(({ obj }) => obj.meta?.content[0]?.url ?? '') assetUrl: string;
 
   @Expose() @Transform(({ obj }) => obj.meta?.attributes ?? []) metadata: MetadataDto[];

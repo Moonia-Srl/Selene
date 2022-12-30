@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Logger, Query } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
@@ -6,22 +6,29 @@ import {
   HealthIndicatorResult,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { AppService } from './app.service';
 
 @Controller('/')
 @ApiTags('Default')
 export class AppController {
   constructor(
+    private readonly Service: AppService,
     private readonly DB: TypeOrmHealthIndicator,
-    private readonly Service: AppService
-  ) {}
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger
+  ) { }
 
+  @ApiOperation({ summary: 'Refresh the data from Rarible without waiting' })
+  @ApiOkResponse({ description: 'Data refreshed correctly without any error' })
   /*--------------------------------------------------------*/
   /*           Polls fresh NFT data from Rarible            */
   /*--------------------------------------------------------*/
-  @Cron(CronExpression.EVERY_10_MINUTES)
-  private CronScraper() {
-    return this.Service.ScrapeFromRarible();
+  @Cron(CronExpression.EVERY_30_MINUTES) @Delete('cache')
+  private async CronScraper() {
+    this.logger.debug("Started scraping process from Rarible", null)
+    try { await this.Service.ScrapeFromRarible(); } 
+    catch (err) { this.logger.error("Scraping process failed", err) }
+    this.logger.debug("Finished scraping process from Rarible")
   }
 
   @ApiOperation({ summary: 'Returns whatever payload is provided (body or query)' })
