@@ -10,10 +10,7 @@ const CrudConfiguration: CrudOptions = {
   dto: { create: UserDto, update: UserDto },
   params: { wallet: { field: 'wallet', type: 'string', primary: true } },
   query: { join: { nft: { eager: false } } },
-  routes:
-    process.env.NODE_ENV !== 'development'
-      ? { only: ['getOneBase', 'createOneBase'] }
-      : null,
+  routes: process.env.NODE_ENV !== 'development' ? { only: ['getOneBase', 'createOneBase'] } : null,
 };
 
 @Crud(CrudConfiguration)
