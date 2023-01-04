@@ -1,5 +1,4 @@
-import { JWTAuthGuard } from '@botika/nestjs-auth';
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -8,16 +7,16 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
-  ApiUnauthorizedResponse,
+  ApiUnauthorizedResponse
 } from '@nestjs/swagger';
 import { AdminDto } from '../admin/admin.dto';
 import { LoginDto, RefreshDto } from './auth.dto';
-import { LoginService } from './auth.service';
+import { AuthService } from './auth.service';
 
 @Controller('auth')
 @ApiTags('Auth')
 export class AuthController {
-  constructor(private readonly loginService: LoginService) {}
+  constructor(private readonly AuthService: AuthService) {}
 
   @ApiOperation({ summary: 'Authenticates the admin with credentials' })
   @ApiBody({ description: 'The auth credentials', type: LoginDto })
@@ -29,8 +28,8 @@ export class AuthController {
   /*   Handles the login of an Admin with credentials       */
   /*--------------------------------------------------------*/
   @Post('login')
-  public login(@Body() payload: LoginDto) {
-    return this.loginService.login(payload);
+  public Login(@Body() payload: LoginDto) {
+    return this.AuthService.Login(payload);
   }
 
   @ApiOperation({ summary: 'Updates the Access Token using Refresh Token' })
@@ -43,21 +42,20 @@ export class AuthController {
   /*--------------------------------------------------------*/
   @Post('refresh')
   // @UseGuards(JWTAuthGuard)
-  public refresh(@Body() payload: RefreshDto): Promise<unknown> {
-    return this.loginService.refresh(payload);
+  public Refresh(@Body() payload: RefreshDto): Promise<unknown> {
+    return this.AuthService.Refresh(payload);
   }
 
   @ApiOperation({ summary: 'Initializes the auth credentials using params' })
   @ApiBody({ description: 'The new authenticated admin', type: AdminDto })
   @ApiOkResponse({ description: 'Successfully registered' })
-  @ApiForbiddenResponse({ description: 'Incorrect email or password' })
   @ApiBadRequestResponse({ description: 'Missing required params in request' })
   @ApiInternalServerErrorResponse({ description: 'Unexpected error occurred' })
   /*--------------------------------------------------------*/
   /*        Handles new user Sign Up with auth init         */
   /*--------------------------------------------------------*/
   @Post('signup')
-  public signup(@Body() payload: AdminDto) {
-    return this.loginService.signup(payload);
+  public Signup(@Body() payload: AdminDto) {
+    return this.AuthService.Signup(payload);
   }
 }

@@ -1,19 +1,16 @@
-import { NestJSAuthModule } from '@botika/nestjs-auth';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { getAuthConfig } from 'src/shared/auth.config';
 import { Admin } from '../admin/admin.entity';
 import { AuthController } from './auth.controller';
-import { LoginService } from './auth.service';
+import { AuthService } from './auth.service';
 
 @Module({
   imports: [
     // Loads the TypeOrm feature for the Admin table/collection
     TypeOrmModule.forFeature([Admin]),
-    // Loads our internal authentication library
-    NestJSAuthModule.register(getAuthConfig()),
+    // TODO (Enea): Add JwtService module configuration
   ],
   controllers: [AuthController],
-  providers: [LoginService],
+  providers: [AuthService],
 })
 export class AuthModule {}

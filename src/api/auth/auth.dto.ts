@@ -1,25 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsEmail,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, IsObject, IsString } from 'class-validator';
 
-export type Auth<T> = {
-  accessToken: string;
-  refreshToken: string;
-  payload: T;
+export class AuthDTO<T> { 
+  @ApiProperty() @IsNotEmpty() @IsObject() payload: T; 
+  @ApiProperty() @IsNotEmpty() @IsString() access: string; 
+  @ApiProperty() @IsNotEmpty() @IsString() refresh: string;
 };
-
-export class JwtPayload {
-  @ApiProperty() @IsNotEmpty() @IsString() iss: string;
-  @ApiProperty() @IsOptional() @IsString() sub?: string;
-  @ApiProperty() @IsNotEmpty() @IsArray() @IsString({ each: true }) aud: string[];
-  @ApiProperty() @IsNotEmpty() @IsNumber() exp: number;
-}
 
 export class LoginDto {
   @ApiProperty() @IsNotEmpty() @IsString() @IsEmail() email: string;

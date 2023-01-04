@@ -1,81 +1,97 @@
-import { AuthService, TokenType } from '@botika/nestjs-auth';
-import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AdminDto } from 'src/api/admin/admin.dto';
+import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
+import { AdminDto } from '../admin/admin.dto';
 import { Admin } from '../admin/admin.entity';
-import { Auth, JwtPayload, LoginDto, RefreshDto } from './auth.dto';
+import { AccessJwtOps, AccessPaylaod, RefreshJwtOps, RefreshPayload } from './auth.constants';
+import { AuthDTO, LoginDto, RefreshDto } from './auth.dto';
 
 @Injectable()
-export class LoginService {
+export class AuthService {
   constructor(
-    private readonly authService: AuthService<JwtPayload>,
-    @InjectRepository(Admin) private readonly adminRepo: Repository<Admin>
-  ) {}
+    private readonly JwtService: JwtService,
+    @InjectRepository(Admin) private readonly AdminRepo: Repository<Admin>,
+  ) { }
 
-  private async getByLogin(payload: LoginDto): Promise<Partial<Admin>> {
-    // Destructure the email and password fields from the payload
-    const { email, password } = payload;
 
-    // Retrieve the existent admin with the email provided
-    const admin = await this.adminRepo.findOne({ where: { email } });
-    // If no admin is found, an error is returned
-    if (admin === null) throw new ForbiddenException('Incorrect email or password');
-
-    // Checks that both password matches, if not throws an error
-    const isSame = await this.authService.checkPassword(password, admin.payload);
-    if (!isSame) throw new ForbiddenException('Incorrect email or password');
-
-    return admin; // At last returns an error
+  /**
+   * Signs the Access Token and Refresh tokens with default configurations.
+   * @param {Partial<Admin>} admin - The admin payload to be signed
+   * @returns {Promise<[string, string]>} - The access & refresh token
+   */
+  private async GenerateTokens(admin: Partial<Admin>): Promise<[string, string]> {
+    const access = await this.JwtService.signAsync({ ...admin, ...AccessPaylaod }, AccessJwtOps)
+    const refresh = await this.JwtService.signAsync({ ...admin, ...RefreshPayload }, RefreshJwtOps)
+    return [access, refresh]
   }
 
   /**
-   * Handles the login a of an already existing user
-   * @param {LoginDto} payload - Email and password
-   * @returns {unknown}
+   * Creates a new admin in the Database with the hashed password.
+   * @param {AdminDto} admin - The new admin to create
+   * @returns {Promise<Admin>} - The newly created admin on the Database
    */
-  public async login(payload: LoginDto): Promise<Auth<{ _id: string }>> {
-    const admin = await this.getByLogin(payload);
-    const toSign = { _id: admin.id.toString() };
-
-    // Sign the Access Token for the identified Admin
-    const accessToken = this.authService.signToken(toSign, TokenType.Access);
-    // Sign the Refresh Token for the identified Admin
-    const refreshToken = this.authService.signToken(toSign, TokenType.Refresh);
-
-    // Saves the Refresh Token to the database for later
-    await this.adminRepo.update({ id: admin.id }, { refreshToken });
-
-    // Returns the authenticated payload plus the admin id
-    return { accessToken, refreshToken, payload: toSign };
-  }
-
-  public async refresh(payload: RefreshDto): Promise<Auth<Admin>> {
-    // Destructure the input payload
-    const { refreshToken } = payload;
-
-    // Retrieves the matching Admin entity in the database
-    const admin = await this.adminRepo.findOne({ where: { refreshToken } });
-
-    if (admin === null) throw new UnauthorizedException('User does not exists');
-
-    // Signs a new Access Token that is then returned to the user
-    const accessToken = this.authService.signToken(
-      { _id: admin.id.toString() },
-      TokenType.Refresh
-    );
-    return { accessToken, refreshToken, payload: admin };
-  }
-
-  public async signup(admin: AdminDto): Promise<Admin> {
+  public async Signup(admin: AdminDto): Promise<Admin> {
     // Destructure needed fields
     const { password, email, ...others } = admin;
 
+    // Retrieve the existent admin with the email provided
+    const exist = !!await this.AdminRepo.findOne({ where: { email } });
+    if (exist) throw new BadRequestException("User already exist")
+
     // Hashes the password and creates a new entry in the database
-    const hash = await this.authService.hashPassword(password);
-    await this.adminRepo.insert({ ...others, email, payload: hash });
+    const hash = await bcrypt.hash(admin.password, await bcrypt.genSalt());
+    await this.AdminRepo.insert({ ...others, email, payload: hash });
 
     // Returns the newly created entry
-    return await this.adminRepo.findOne({ where: { email } });
+    return await this.AdminRepo.findOne({ where: { email } });
+  }
+
+  /**
+   * Authenticates the admin via email and password, then generates access & refresh tokens
+   * @param {LoginDto} payload - Email and password
+   * @returns {Promise<AuthDTO<Admin>>}
+   */
+  public async Login(payload: LoginDto): Promise<AuthDTO<Admin>> {
+    // Renames the password field to plaintext since its not the oone encrypted
+    const { email, password: plaintext } = payload;
+
+    // Retrieve the existent admin with the email provided
+    const admin = await this.AdminRepo.findOne({ where: { email } });
+    // If no admin is found, an error is returned
+    if (admin === null) throw new BadRequestException('Incorrect email or password');
+
+    // Checks that both password matches, if not throws an error
+    const pswdMatches = await bcrypt.compare(plaintext, admin.payload);
+    if (!pswdMatches) throw new ForbiddenException('Incorrect email or password');
+
+    // Sign the Access Token for the identified Admin
+    const [access, refresh] = await this.GenerateTokens({ id: admin.id });
+    // Saves the Refresh Token to the database for later
+    await this.AdminRepo.update({ id: admin.id }, { refreshToken: refresh });
+
+    return { payload: admin, access, refresh }
+  }
+
+   /**
+   * Validates the current refresh token, then generates a new pair of access and refresh token.
+   * @param {RefreshDto} payload - The refresh token for the session
+   * @returns {Promise<AuthDTO<Admin>>}
+   */
+  public async Refresh(payload: RefreshDto): Promise<AuthDTO<Admin>> {
+    // Destructure needed fields
+    const { refreshToken } = payload;
+
+    // Retrieve the existent admin with the Refresh Token provided
+    const admin = await this.AdminRepo.findOne({ where: { refreshToken } });
+    if (!refreshToken || !admin) throw new UnauthorizedException("Refresh token expired")
+
+    // Generates a new pair of token to be returned
+    const [access, refresh] = await this.GenerateTokens({ id: admin.id })
+    // Saves the Refresh Token to the database for later
+    await this.AdminRepo.update({ id: admin.id }, { refreshToken: refresh });
+
+    return { payload: admin, access, refresh }
   }
 }
