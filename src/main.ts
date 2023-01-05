@@ -20,13 +20,17 @@ async function bootstrap() {
 
   // Add validation and transformations pipes globally
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+
   // Setup and initializes the global app logger
-  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+  const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
+  app.useLogger(logger);
 
   // Setups the Swagger integration when not in "production" mode
   if (env.NODE_ENV != 'production') setupSwagger(app);
 
-  await app.listen(port, () => console.warn(`Server started in '${env.NODE_ENV}' mode on port ${env.PORT}`));
+  await app.listen(port, () =>
+    logger.warn(`Server started in '${env.NODE_ENV}' mode on port ${env.PORT}`)
+  );
 }
 
 bootstrap();

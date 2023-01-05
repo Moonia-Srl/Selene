@@ -19,7 +19,7 @@ export const IsMultichainAddress = (opt?: ValidationOptions) => {
       // ETHEREUM wallet desired format
       const ETH_WALLET_REGEX = /(ETHEREUM):(0x)(\w{40})/gm;
       // SOLANA wallet desired format
-      const SOL_WALLET_REGEX = /(SOLANA)(:)(\w{44})/gm;
+      const SOL_WALLET_REGEX = /(SOLANA)(:)(\w{43,44})/gm;
 
       // Array of possible match candidates, only one correct mach is needed
       const RegexArray = [ETH_WALLET_REGEX, SOL_WALLET_REGEX];
