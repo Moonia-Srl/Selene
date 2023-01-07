@@ -31,19 +31,10 @@ export class AppService {
     // For each NFT determine the owner wallet by querying another endpoint
     for (const nft of items) {
       // Makes a request to the Rarible API to fetch the wallet that owns the current 'nft'
-      const getOwnerUrl = `${process.env.RARIBLE_API}/ownerships/byItem`;
-      const { data: { ownerships: [ownership] } } = await axios.get(getOwnerUrl, { params: { itemId: nft.id } });
-
-      nft.owner = ownership?.owner // Updates the local object with the owner address
-
-      // Sometimes the above API call may fail, in this case we retry to another source 
-      if (!ownership?.owner) {
-        // Interpolates the REST endpoint URL and the query params for the endpoint
-        const getOwnerUrl = `https://rarible.com/marketplace/api/v4/items/${nft.id.replace(':', '-')}/ownerships`
-        // Makes the request and converts it back to an AxiosResponse object (prev. Observable)
-        const { data: [ownership] } = await axios.get(getOwnerUrl);
-        nft.owner = ownership.owner?.replace('-', ':'); // Updates the local object with the owner address
-      }
+      const getOwnerUrl = `https://rarible.com/marketplace/api/v4/items/${nft.id.replace(':', '-')}/ownerships`
+      // Makes the request and converts it back to an AxiosResponse object (prev. Observable)
+      const { data: [ownership] } = await axios.get(getOwnerUrl);
+      nft.owner = ownership.owner?.replace('-', ':'); // Updates the local object with the owner address
     }
 
     if (continuation !== undefined) {
