@@ -17,19 +17,19 @@ elif sys.argv[1] not in ["staging", "production"]:
 
 deploy_env = {
     "production": {
-        "port": 5000,
+        "port": 7000,
         "env": "production",
         "name": "Production",
         "ip": "51.158.42.69",
-        "path": "Production/Webservice",
+        "path": "Production/Selene",
     },
     
     "staging": {
-        "port": 3000,
+        "port": 5000,
         "env": "staging",
         "name": "Staging",
         "ip": "51.158.42.69",
-        "path": "Staging/Webservice"
+        "path": "Staging/Selene"
     },
 }[sys.argv[1]]
 
@@ -41,7 +41,7 @@ remote_cmd = "; ".join(
         "yarn install",
         "yarn build",
         f"fuser -k {deploy_env['port']}/tcp",
-        f"NODE_ENV={deploy_env['env']} nohup yarn start:prod &> /dev/null &"
+        f"NODE_ENV={deploy_env['env']} nohup yarn start &> /dev/null &"
         "rm -rf ../../out.zip",
     ]
 )
