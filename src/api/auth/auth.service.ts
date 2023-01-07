@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { AdminDto } from '../admin/admin.dto';
 import { Admin } from '../admin/admin.entity';
-import { AccessJwtOps, AccessPaylaod, RefreshJwtOps, RefreshPayload } from './auth.constants';
+import { GetAccessTokenData, GetRefreshTokenData } from './auth.constants';
 import { AuthDTO, LoginDto, RefreshDto } from './auth.dto';
 
 @Injectable()
@@ -22,8 +22,12 @@ export class AuthService {
    * @returns {Promise<[string, string]>} - The access & refresh token
    */
   private async GenerateTokens(admin: Partial<Admin>): Promise<[string, string]> {
-    const access = await this.JwtService.signAsync({ ...admin, ...AccessPaylaod }, AccessJwtOps)
+    const [AccessPayload, AccessJwtOps] = GetAccessTokenData()
+    const access = await this.JwtService.signAsync({ ...admin, ...AccessPayload }, AccessJwtOps)
+
+    const [RefreshPayload, RefreshJwtOps] = GetRefreshTokenData()
     const refresh = await this.JwtService.signAsync({ ...admin, ...RefreshPayload }, RefreshJwtOps)
+    
     return [access, refresh]
   }
 
