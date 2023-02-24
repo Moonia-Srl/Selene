@@ -1,19 +1,6 @@
 import { Controller, Get, Header, UseInterceptors } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiProduces,
-  ApiTags,
-} from '@nestjs/swagger';
-import {
-  Crud,
-  CrudController,
-  CrudOptions,
-  CrudRequest,
-  CrudRequestInterceptor,
-  ParsedRequest,
-} from '@nestjsx/crud';
+import { ApiBadRequestResponse, ApiOkResponse, ApiOperation, ApiProduces, ApiTags } from '@nestjs/swagger';
+import { Crud, CrudController, CrudOptions, CrudRequest, CrudRequestInterceptor, ParsedRequest } from '@nestjsx/crud';
 import { NFTDto } from './nft.dto';
 import { NFT } from './nft.entity';
 import { NFTService } from './nft.service';
