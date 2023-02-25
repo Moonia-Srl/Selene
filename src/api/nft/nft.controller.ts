@@ -24,7 +24,7 @@ export class NFTController implements CrudController<NFT> {
   @ApiOkResponse({ description: 'The csv textual content', type: 'string' })
   @ApiBadRequestResponse({ description: 'Wrong query params format provided' })
   /*----------------------------------------------------------------*/
-  /*     Returns the same results as a GET /nft but in csv format   */
+  /*    Returns the same results as a GET /nfts but in csv format   */
   /*----------------------------------------------------------------*/
   @Get('export')
   @Header('Content-Type', 'text/csv')
