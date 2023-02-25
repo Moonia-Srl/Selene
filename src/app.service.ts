@@ -34,7 +34,7 @@ export class AppService {
       const getOwnerUrl = `https://rarible.com/marketplace/api/v4/items/${nft.id.replace(':', '-')}/ownerships`
       // Makes the request and converts it back to an AxiosResponse object (prev. Observable)
       const { data: [ownership] } = await axios.get(getOwnerUrl);
-      nft.owner = ownership.owner?.replace('-', ':'); // Updates the local object with the owner address
+      nft.owner = ownership?.owner?.replace('-', ':'); // Updates the local object with the owner address
     }
 
     if (continuation !== undefined) {

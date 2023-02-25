@@ -27,7 +27,7 @@ export class AppController {
   private async CronScraper() {
     this.logger.debug("Started scraping process from Rarible", null)
     try { await this.Service.ScrapeFromRarible(); } 
-    catch (err) { this.logger.error("Scraping process failed", err) }
+    catch (err) { this.logger.error(`Scraping process failed: '${err.message}'`) }
     this.logger.debug("Finished scraping process from Rarible")
   }
 
