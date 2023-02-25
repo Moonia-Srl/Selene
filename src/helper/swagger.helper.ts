@@ -6,7 +6,7 @@ export function setupSwagger(app: INestApplication): void {
   const options = new DocumentBuilder()
     .setTitle('Selene')
     .setDescription('Moonium WebService API documentation')
-    .setVersion('1.0.0')
+    .setVersion(env.SELENE_VERSION)
     .addBearerAuth()
     .addServer(env.NODE_ENV === 'production' ? 'https://' : 'http://')
     .build();

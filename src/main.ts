@@ -29,7 +29,7 @@ async function bootstrap() {
   if (env.NODE_ENV != 'production') setupSwagger(app);
 
   await app.listen(port, () =>
-    logger.warn(`Server started in '${env.NODE_ENV}' mode on port ${env.PORT}`)
+    logger.warn(`Selene (v${env.SELENE_VERSION}) started in '${env.NODE_ENV}' mode on port ${env.PORT}`)
   );
 }
 
