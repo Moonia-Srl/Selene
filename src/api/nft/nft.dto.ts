@@ -65,8 +65,6 @@ export class Rarible2NFT {
   contract: { address: string };
 
   @Expose()
-  @Transform(({ obj }) => ({
-    wallet: obj.owner ?? obj.lastSale?.buyer ?? obj.creators?.pop()?.account,
-  }))
+  @Transform(({ obj }) => ({ wallet: obj.owner }))
   owner?: { wallet: string };
 }
